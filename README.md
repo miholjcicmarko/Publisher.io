@@ -1,3 +1,3 @@
 # PublisherPrototype
 
-Link to project website: https://miholjcicmarko.github.io/PublisherPrototype.io/
+Link to project website: https://miholjcicmarko.github.io/Publisher.io/

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+<style>
+    html,
+    body,
+    #map {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .newspaper {
+        position: absolute;
+    }
+
+    .newspaper svg {
+        width: 60px;
+        height: 20px;
+        font: 10px sans-serif;
+        position: absolute;
+    }
+</style>
+<div id="intro">
+    <h1>Publisher Prototype</h1>
+</div>
+<div id="map"></div>
+<script src="https://maps.google.com/maps/api/js?key=AIzaSyDeuqYAoD2lUBNikOZng7QsNOXhZ9-mH5o"></script>
+<script src="https://d3js.org/d3.v7.js"></script>
+<script>
+    async function googleMap() {
+
+        //Our options to pass to our new google map object
+        let options = {
+            zoom: 4,
+            center: {
+                lat: 41.4925,
+                lng: -95.8905556,
+            },
+            mapTypeId: 'roadmap',
+        };
+
+        // Create the Google Map…
+        let map = new google.maps.Map(d3.select("#map").node(), options);
+
+        // Load the newspaper data. When the data comes back, create an overlay.
+        let data = await d3.csv("newspapers.csv");
+        console.log(data)
+
+        //Filter the data to only see US sightings.
+        let usDataSample = data.filter(d => d.country === 'us');
+        console.log(usDataSample)
+
+        //Create the overlay that we will draw on
+        let overlay = new google.maps.OverlayView();
+
+        // Add the container when the overlay is added to the map.
+        overlay.onAdd = function () {
+
+            //to see all the available panes;
+            console.log(this.getPanes());
+
+            let layer = d3.select(this.getPanes().overlayMouseTarget).append("div")
+                .attr("class", "newspaper");
+
+            overlay.onRemove = function () {
+                d3.select('.newspaper').remove();
+            };
+
+            overlay.draw = function () {
+
+                let projection = this.getProjection(),
+                    padding = 10;
+
+                // Draw each marker as a separate SVG element.
+                // We could use a single SVG, but what size would it have?
+                let marker = layer.selectAll('svg')
+                    .data(usDataSample);
+
+                let markerEnter = marker.enter().append("svg");
+
+                // add the circle
+                markerEnter.append("circle");
+
+                marker.exit().remove();
+
+                marker = marker.merge(markerEnter);
+
+                marker
+                    .each(transform)
+                    .attr("class", "marker");
+
+                // style the circle
+                marker.select("circle")
+                    .attr("r", 10)
+                    .attr("cx", padding)
+                    .attr("cy", padding)
+                    .style('opacity', .8)
+                    .attr('fill', 'red')
+                    .on('click', d => console.log(d));
+
+                let tooltip = d3.selectAll(".marker");
+
+                tooltip.on("mouseover", function(d) {
+                    var x_pos = d.srcElement.__data__.name;
+
+                    d3.select(this).append("title")
+                        .attr("id", "tooltip")
+                        .attr("x", x_pos)
+                        .attr("text-anchor", "middle")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", "20px")
+                        .attr("font-weight", "bold")
+                        .attr("fill", "black")
+                        .text(function (d) { 
+                            return "Name: " + x_pos});
+                })
+
+                tooltip.on("mouseout", function() { d3.select("#tooltip").remove()});
+
+                let connecter = d3.selectAll(".marker");
+
+                connecter.on("click", function(d) {
+                    window.open(d.srcElement.__data__.website_name, "_blank");
+                })
+
+
+                //transforms the markers to the right
+                // lat / lng using the projection from google maps
+                function transform(d) {
+                    d = new google.maps.LatLng(+d.latitude, +d.longitude);
+                    d = projection.fromLatLngToDivPixel(d);
+                    return d3.select(this)
+                        .style("left", (d.x - padding) + "px")
+                        .style("top", (d.y - padding) + "px");
+                }
+            };
+        };
+        // Bind our overlay to the map…
+        overlay.setMap(map);
+    }
+    googleMap();
+</script>

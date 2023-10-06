@@ -45,12 +45,8 @@
         let map = new google.maps.Map(d3.select("#map").node(), options);
 
         // Load the newspaper data. When the data comes back, create an overlay.
-        let data = await d3.csv("newspapers.csv");
-        console.log(data)
-
-        //Filter the data to only see US sightings.
-        let usDataSample = data.filter(d => d.country === 'us');
-        console.log(usDataSample)
+        let news_data = await d3.csv("newspapers.csv");
+        console.log(news_data)
 
         //Create the overlay that we will draw on
         let overlay = new google.maps.OverlayView();
@@ -76,7 +72,7 @@
                 // Draw each marker as a separate SVG element.
                 // We could use a single SVG, but what size would it have?
                 let marker = layer.selectAll('svg')
-                    .data(usDataSample);
+                    .data(news_data);
 
                 let markerEnter = marker.enter().append("svg");
 
